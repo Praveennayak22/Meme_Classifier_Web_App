@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOMENTA Multilingual Classifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .full-width-card {
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Language Selection */
+        .language-section {
+            margin-bottom: 25px;
+        }
+
+        .language-label {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .language-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .language-option {
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+        }
+
+        .language-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .language-option.selected {
+            border-color: #667eea;
+            background: #eef1ff;
+        }
+
+        .language-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .language-flag {
+            font-size: 1.8em;
+        }
+
+        .language-text {
+            text-align: left;
+        }
+
+        .language-name {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #1f2937;
+        }
+
+        .language-desc {
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+
+        .language-check {
+            color: #667eea;
+            font-size: 1.2em;
+            display: none;
+        }
+
+        .language-option.selected .language-check {
+            display: block;
+        }
+
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-zone:hover {
+            background: #eef1ff;
+            border-color: #764ba2;
+        }
+
+        .upload-zone.dragover {
+            background: #e0e7ff;
+            border-color: #4f46e5;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .preview-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .classify-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .classify-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .classify-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .processing-step {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+        }
+
+        .processing-step.active {
+            border-color: #667eea;
+            background: #eef1ff;
+        }
+
+        .processing-step.complete {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+
+        .step-icon {
+            font-size: 1.5em;
+        }
+
+        .step-info h4 {
+            font-size: 1em;
+            margin-bottom: 3px;
+        }
+
+        .step-info p {
+            font-size: 0.85em;
+            color: #6b7280;
+        }
+
+        .result-card {
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 3px solid;
+        }
+
+        .result-card.harmful {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+
+        .result-card.safe {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-label {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .result-language {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            transition: width 0.5s;
+        }
+
+        .confidence-fill.harmful {
+            background: #ef4444;
+        }
+
+        .confidence-fill.safe {
+            background: #10b981;
+        }
+
+        .info-section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-section h4 {
+            font-size: 1em;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .embedding-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .embedding-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .embedding-label {
+            font-size: 0.75em;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .embedding-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .concept-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .concept-tag {
+            background: #ede9fe;
+            color: #7c3aed;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-icon {
+            font-size: 4em;
+            opacity: 0.3;
+            margin-bottom: 10px;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .arch-module {
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid;
+        }
+
+        .arch-module.blue {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .arch-module.green {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+
+        .arch-module.purple {
+            background: #ede9fe;
+            border-color: #7c3aed;
+        }
+
+        .arch-module.pink {
+            background: #fce7f3;
+            border-color: #ec4899;
+        }
+
+        .arch-module h4 {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .arch-module p {
+            font-size: 0.9em;
+            color: #4b5563;
+        }
+
+        .code-mixing-note {
+            margin-top: 15px;
+            padding: 15px;
+            background: #eef1ff;
+            border: 2px solid #c7d2fe;
+            border-radius: 10px;
+        }
+
+        .code-mixing-note p {
+            font-size: 0.9em;
+            color: #4338ca;
+            margin-bottom: 5px;
+        }
+
+        .code-mixing-note p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MEME Classifier</h1>
+            <p>Multilingual Meme Harmfulness Detection </p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Upload Section -->
+            <div class="card">
+                <div class="card-title">
+                    Upload Meme
+                </div>
+
+                <!-- Language Selection -->
+                <div class="language-section">
+                    <div class="language-label">
+                        Select Language 
+                    </div>
+                    <div class="language-grid" id="languageGrid">
+                        <div class="language-option selected" data-lang="english">
+                            <div class="language-info">
+                                <span class="language-flag"></span>
+                                <div class="language-text">
+                                    <div class="language-name">English</div>
+                                    <div class="language-desc">English only</div>
+                                </div>
+                            </div>
+                            <span class="language-check">✓</span>
+                        </div>
+                        <div class="language-option" data-lang="telugu">
+                            <div class="language-info">
+                                <span class="language-flag"></span>
+                                <div class="language-text">
+                                    <div class="language-name">Telugu + English</div>
+                                    <div class="language-desc">(తెలుగు + English)</div>
+                                </div>
+                            </div>
+                            <span class="language-check">✓</span>
+                        </div>
+                        <div class="language-option" data-lang="kannada">
+                            <div class="language-info">
+                                <span class="language-flag"></span>
+                                <div class="language-text">
+                                    <div class="language-name">Kannada + English</div>
+                                    <div class="language-desc">(ಕನ್ನಡ + English)</div>
+                                </div>
+                            </div>
+                            <span class="language-check">✓</span>
+                        </div>
+                        <div class="language-option" data-lang="tamil">
+                            <div class="language-info">
+                                <span class="language-flag"></span>
+                                <div class="language-text">
+                                    <div class="language-name">Tamil + English</div>
+                                    <div class="language-desc">(தமிழ் + English)</div>
+                                </div>
+                            </div>
+                            <span class="language-check">✓</span>
+                        </div>
+                        <div class="language-option" data-lang="hindi">
+                            <div class="language-info">
+                                <span class="language-flag"></span>
+                                <div class="language-text">
+                                    <div class="language-name">Hindi + English</div>
+                                    <div class="language-desc">(हिंदी + English)</div>
+                                </div>
+                            </div>
+                            <span class="language-check">✓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="uploadZone" class="upload-zone">
+                    <div class="upload-icon">📁</div>
+                    <p style="font-size: 1.1em; margin-bottom: 10px;">Drag & drop an image or click to browse</p>
+                    <p style="color: #6b7280; font-size: 0.9em;">Supports: JPG, PNG, JPEG</p>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <div id="previewSection" style="display: none;">
+                    <div class="preview-container">
+                        <img id="previewImage" class="preview-image" alt="Preview">
+                        <button class="remove-btn" onclick="clearImage()">Remove</button>
+                    </div>
+                    <button class="classify-btn" id="classifyBtn" onclick="classifyImage()">
+                        Classify Meme
+                    </button>
+                </div>
+
+                <div id="errorMessage" style="display: none;" class="error-message"></div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card">
+                <div class="card-title">
+                    Analysis Results
+                </div>
+
+                <div id="processingSteps" style="display: none;">
+                    <div class="processing-step" id="step0">
+                        <div class="step-icon">1</div>
+                        <div class="step-info">
+                            <h4>Text Extraction</h4>
+                            <p>OCR + IndicBERT</p>
+                        </div>
+                    </div>
+                    <div class="processing-step" id="step1">
+                        <div class="step-icon">2</div>
+                        <div class="step-info">
+                            <h4>Local Features</h4>
+                            <p>VGG19 Region Analysis</p>
+                        </div>
+                    </div>
+                    <div class="processing-step" id="step2">
+                        <div class="step-icon">3</div>
+                        <div class="step-info">
+                            <h4>Global Features</h4>
+                            <p>CLIP Encoding</p>
+                        </div>
+                    </div>
+                    <div class="processing-step" id="step3">
+                        <div class="step-icon">4</div>
+                        <div class="step-info">
+                            <h4>Concept Extraction</h4>
+                            <p>ConceptNet + Embeddings</p>
+                        </div>
+                    </div>
+                    <div class="processing-step" id="step4">
+                        <div class="step-icon">5</div>
+                        <div class="step-info">
+                            <h4>Classification</h4>
+                            <p>MOMENTA Fusion Model</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultSection" style="display: none;"></div>
+
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">⊙</div>
+                    <p>Upload and classify a meme to see results</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Info -->
+        <div class="card full-width-card">
+            <div class="card-title">MOMENTA Architecture</div>
+            <div class="architecture-image" style="margin-bottom: 20px;">
+                <img src="C:\Users\AKHILESH\Downloads\momenta-classifier\momenta-classifier\Architecture.png" alt="MOMENTA Architecture" style="width:100%; max-width:800px; display:block; margin:auto; border-radius: 10px;">
+            </div>
+            <div class="architecture-grid">
+                <div class="arch-module blue">
+                    <h4>Text Encoder</h4>
+                    <p>OCR + IndicBERT (Multilingual)</p>
+                </div>
+                <div class="arch-module green">
+                    <h4>Local Features</h4>
+                    <p>VGG19 + Selective Search</p>
+                </div>
+                <div class="arch-module purple">
+                    <h4>Global Features</h4>
+                    <p>CLIP ViT-Base</p>
+                </div>
+                <div class="arch-module pink">
+                    <h4>Concept Net</h4>
+                    <p>Caption + Knowledge Graph</p>
+                </div>
+            </div>
+            <div class="code-mixing-note">
+                <p><strong>Supported Languages:</strong> English, Telugu, Kannada, Tamil, Hindi</p>
+                <p>Automatic detection of mixed-language text (e.g., "This is अच्छा", "Super ಸೂಪರ್")</p>
+            </div>
+        </div>
+
+        <!-- Authors Section -->
+        <div class="card full-width-card">
+            <div class="card-title">Authors</div>
+            <div class="architecture-grid" style="margin-bottom: 20px;">
+                <div class="arch-module purple">
+                    <h4>Mayank Singh</h4>
+                    <p>Faculty Supervisor</p>
+                </div>
+                <div class="arch-module purple">
+                    <h4>Chetana Dubey</h4>
+                    <p>Project Mentor</p>
+                </div>
+            </div>
+            <div class="architecture-grid">
+                <div class="arch-module green">
+                    <h4>Keerthan Varma</h4>
+                    <p>Primary Author</p>
+                </div>
+                <div class="arch-module green">
+                    <h4>Dinesh Sidhhartha</h4>
+                    <p>Primary Author</p>
+                    <!-- <p>Web App Developer</p> -->
+                </div>
+                <div class="arch-module green">
+                    <h4>Hemanth</h4>
+                    <p>Primary Author</p>
+                </div>
+                <div class="arch-module green">
+                    <h4>Lakshmi Manasa</h4>
+                    <p>Primary Author</p>
+                </div>
+                <div class="arch-module green">
+                    <h4>Praveen Kumar</h4>
+                    <p>Primary Author</p>
+                    <!-- <p>Web App Developer</p> -->
+                </div>
+                <div class="arch-module green">
+                    <h4>Ravi Bhavana</h4>
+                    <p>Primary Author</p>
+                </div>
+                <div class="arch-module green">
+                    <h4>Venkat Akhilesh Naik</h4>
+                    <p>Primary Author</p>
+                    <!-- <p>Web App Developer</p> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/classify';
+        let selectedFile = null;
+        let selectedLanguage = 'english';
+
+        // Language selection
+        document.querySelectorAll('.language-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.language-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                selectedLanguage = this.dataset.lang;
+            });
+        });
+
+        // Upload zone functionality
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please upload an image file');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('uploadZone').style.display = 'none';
+                document.getElementById('previewSection').style.display = 'block';
+                hideError();
+                clearResults();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            selectedFile = null;
+            fileInput.value = '';
+            document.getElementById('uploadZone').style.display = 'block';
+            document.getElementById('previewSection').style.display = 'none';
+            clearResults();
+        }
+
+        async function classifyImage() {
+            if (!selectedFile) return;
+
+            const classifyBtn = document.getElementById('classifyBtn');
+            classifyBtn.disabled = true;
+            classifyBtn.textContent = 'Processing...';
+
+            hideError();
+            showProcessing();
+
+            try {
+                const stepInterval = setInterval(() => {
+                    const activeStep = document.querySelector('.processing-step.active');
+                    if (activeStep) {
+                        activeStep.classList.remove('active');
+                        activeStep.classList.add('complete');
+                        const nextStep = activeStep.nextElementSibling;
+                        if (nextStep && nextStep.classList.contains('processing-step')) {
+                            nextStep.classList.add('active');
+                        }
+                    } else {
+                        document.getElementById('step0').classList.add('active');
+                    }
+                }, 800);
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('language', selectedLanguage);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(stepInterval);
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(`Classification failed: ${error.message}. Make sure the backend is running!`);
+            } finally {
+                classifyBtn.disabled = false;
+                classifyBtn.textContent = 'Classify Meme';
+                hideProcessing();
+            }
+        }
+
+        function showProcessing() {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('processingSteps').style.display = 'block';
+            
+            document.querySelectorAll('.processing-step').forEach(step => {
+                step.classList.remove('active', 'complete');
+            });
+        }
+
+        function hideProcessing() {
+            setTimeout(() => {
+                document.getElementById('processingSteps').style.display = 'none';
+            }, 500);
+        }
+
+        function displayResults(data) {
+            const resultSection = document.getElementById('resultSection');
+            const isHarmful = data.prediction === 0;
+            const confidence = (data.confidence * 100).toFixed(1);
+
+            let languageInfo = '';
+            if (data.language) {
+                const langOcr = data.language.ocr_languages ? data.language.ocr_languages.join(' + ').toUpperCase() : '';
+                languageInfo = `
+                    <div class="result-language">
+                        <span style="font-size: 1.2em;"></span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9em;">${data.language.name}</div>
+                            ${data.language.supports_code_mixing ? `<div style="font-size: 0.8em; color: #6b7280;">✓ Code-mixing (${langOcr})</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultSection.innerHTML = `
+                <div class="result-card ${isHarmful ? 'harmful' : 'safe'}">
+                    <div class="result-header">
+                        <div class="result-label">${isHarmful ? 'Harmful' : 'Non-Harmful'}</div>
+                        <div style="font-size: 1.3em; font-weight: bold;">${confidence}%</div>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill ${isHarmful ? 'harmful' : 'safe'}" 
+                             style="width: ${confidence}%"></div>
+                    </div>
+                    ${languageInfo}
+                </div>
+
+                <div class="info-section">
+                    <h4>Feature Dimensions</h4>
+                    <div class="embedding-grid">
+                        <div class="embedding-item">
+                            <div class="embedding-label">CLIP</div>
+                            <div class="embedding-value">${data.embeddings.clip}d</div>
+                        </div>
+                        <div class="embedding-item">
+                            <div class="embedding-label">VGG</div>
+                            <div class="embedding-value">${data.embeddings.vgg}d</div>
+                        </div>
+                        <div class="embedding-item">
+                            <div class="embedding-label">IndicBERT</div>
+                            <div class="embedding-value">${data.embeddings.indicbert}d</div>
+                        </div>
+                        <div class="embedding-item">
+                            <div class="embedding-label">ConceptNet</div>
+                            <div class="embedding-value">${data.embeddings.conceptnet}d</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4>Extracted Text</h4>
+                    <p style="font-style: italic; color: #4b5563; word-wrap: break-word;">${data.extractedText || 'No text detected'}</p>
+                </div>
+
+                <div class="info-section">
+                    <h4>Detected Concepts</h4>
+                    <div class="concept-tags">
+                        ${data.concepts && data.concepts.length > 0 
+                            ? data.concepts.map(c => `<span class="concept-tag">${c}</span>`).join('')
+                            : '<span style="color: #6b7280;">No concepts detected</span>'}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('emptyState').style.display = 'none';
+            resultSection.style.display = 'block';
+        }
+
+        function clearResults() {
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
